@@ -12,11 +12,7 @@ standard build tool for Haskell. I'll get into the minutae of stack in another
 post, in particular when we actually start using libraries.
 
 > **Side note 1**: There really isn't much point in installing the Haskell
-Platform, stack can do everything for you. If you ever want to just compile a
-single file, just run `stack ghc -- [file]` instead of just `ghc [file]`. This is
-not advisable though, it's better to run `stack new [name-of-thing] simple` and
-then do what you like in there; that way, you'll have access to external
-libraries.
+Platform, stack can do everything for you.
 
 > **Side note 2**: It's worth getting familiar with the libraries that are in
 the Haskell Platform since HackerRank only allows you to use these libraries.
@@ -65,15 +61,29 @@ a `NUMBER_OF_PROCESSORS` variable, which (confusingly) refers to the number of
 *cores* your computer has.
 
 We won't get into starting a project yet, although it may be worth testing
-whether stack works or not by running `stack new my-app simple` in the folder
-where you want to keep your projects. This will create a project called `my-app`
-(feel free not to call it that by the way, it's your computer). We'll be
-discussing the structure of this project in due time; for the time being, we'll
-be living in the `src` directory. Enter `cd my-app` to move into the directory,
-then run `stack build` and hope nothing explodes :)
+whether stack works or not. First run `stack setup` to download a global GHC
+(Glasgow Haskell Compiler) instance (should be version 8), then run
+`stack new my-app simple` in the folder where you want to keep your projects.
+This will create a project called `my-app` (feel free not to call it that by the
+way, it's your computer). We'll be discussing the structure of this project in
+due time; for now, we'll be living in the `src` directory. Enter `cd my-app` to
+move into the directory, then run `stack build` and hope nothing explodes :)
 
 But if something does explode, just ask me about it and I'll see what I can do
 to fix it. After that, you can run `stack exec my-app` to greet the world.
+
+As a final note, if you need to run a single file (interpreted) but don't feel
+like it's worth creating a whole stack project for it, just write the file as
+you normally would, but add the following two lines to the top of the file:
+
+```haskell
+#!/usr/bin/env stack
+-- stack runghc
+```
+
+Then run it with `stack [file-name]`. On Windows, it's not necessary to add
+the first line, only the second. This may take a while to run since there's a
+bit of overhead in booting up stack.
 
 ## Installing a text editor
 
@@ -83,13 +93,15 @@ However, for Haskell development (and indeed development in general), I would
 recommend using [Atom](https://atom.io/) or [Vim](http://www.vim.org/) if you're
 on Linux (talk to me if you want to know how to set up Vim for Haskell
 development, been a while since I've used it but I should be at least *some*
-help).
+help). [Sublime Text](https://www.sublimetext.com/) is pretty good too, however
+it's not free (trial version has no enforced time limit though).
 
 At this stage, I think I can safely say that I don't think you should use an IDE
 (integrated development environment) unless you're doing development that, for
 all practical purposes, requires one (like Android app development). At best,
 they hide the details of the build process from you, at worst they can give you
-a false impression as to how the build process actually works.
+a false impression as to how the build process actually works. Besides, there's
+no standard Haskell IDE anyway.
 
 Text editors have recently become extremely comprehensive, filling a gap
 somewhere between a traditional text editor and an IDE, but with the benefit

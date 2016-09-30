@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Practical I/O in Haskell
+title: Practical I/O
 permalink: /do-a-haskell/
 ---
 
@@ -119,6 +119,10 @@ main = do
   -- ...
 ```
 
+Much better! Anyone wondering what `<$>` does can go and learn about typeclasses
+and functors (`<$>` is an infix synonym for `fmap`), but practically speaking,
+it allows you to apply the function `parseLine` to the boxed value in `getLine`.
+
 By the way, in case you didn't notice, we won't need `n` at all! HackerRank
 gives you this in case you're using a language like C, since it makes it
 significantly easier to read the line of space seperated things if you know how
@@ -134,9 +138,8 @@ main = do
   -- ...
 ```
 
-Much better! Anyone wondering what `<$>` does can go and learn about typeclasses
-and functors (`<$>` in an infix synonym for `fmap`), but practically speaking,
-it allows you to apply the function `parseLine` to the boxed value in `getLine`.
+Sometimes people prefer to write `_ <- getLine` instead of just `getLine` to
+emphasize that we're throwing the input out.
 
 Let's try another example. This time we want to read in a matrix, e.g.
 
