@@ -85,6 +85,24 @@ Then run it with `stack [file-name]`. On Windows, it's not necessary to add
 the first line, only the second. This may take a while to run since there's a
 bit of overhead in booting up stack.
 
+## Cabal
+
+If you can't install stack for whatever reason, you can still just use cabal.
+This will come with most versions of the GHC Haskell distribution. Here's the
+build process:
+
+```bash
+mkdir [name-of-project]
+cd [name-of-project]
+cabal init  # defaults are mostly fine, set source directory to `src`
+cabal sandbox init  # creates sandbox environment
+cabal install -j    # builds your project
+./cabal-sandbox/bin/[name-of-executable]  # runs your project
+```
+
+After this, using cabal is very similar to using stack. Documentation for cabal
+can be found [here](https://www.haskell.org/cabal/users-guide/).
+
 ## Installing a text editor
 
 If you've been programming for a while, you probably already have a favorite

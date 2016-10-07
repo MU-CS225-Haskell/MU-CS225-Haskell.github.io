@@ -542,16 +542,18 @@ Let's see the `Monad` instance for `Maybe` and `Either a`:
 
 ```haskell
 instance Monad Maybe where
+  return x = Just x
   Nothing >>= _ = Nothing
   Just x  >>= f = f x
 
 instance Monad (Either a) where
+  return x = Right x
   Left err >>= _ = Left err
   Right x  >>= f = f x
 ```
 
-We don't actually need an explicit implementation for `return` since it's the
-same as `pure` from the `Applicative` typeclass.
+This was a very simple look into the most basic monadic types. We'll be dealing
+with monads a lot in the future, but we'll deal with them as they come.
 
 ### Applicative
 
@@ -575,6 +577,8 @@ the parsec package).
 
 Let's look back at the `Monad` instance for `List`. Hmm, in what way could
 `List` provide a computational context? One way is through *nondeterminism*.
+See [here](https://github.com/MU-CS225-Haskell/CS225-examples/blob/master/linked-list/src/LinkedList.hs)
+for the implementation.
 
 We can think of a function `a -> List b` as being a computation that returns
 multiple possible results (finding complex roots is a good example). Chaining
@@ -584,6 +588,7 @@ even more values. Let's see the implementation:
 
 ```haskell
 instance Monad List where
+  return x = Cons x Nil
   Nil       >>= _ = Nil
   Cons x xs >>= f = f x <> (xs >>= f)
 ```
