@@ -117,9 +117,8 @@ satisfying $$ e \cdot x = x \cdot e = x $$, for all $$ x \in M $$.
 addition.
 2. Note that $$ \text{End}(A) $$ for some set $$ A $$ represents the set of all
 endomorphisms on the set $$ A $$, i.e. the set of all functions from $$ A $$ to
-$$ A $$. Can $$ \{ f \in \text{End}(A) \} $$ form a monoid?
-If not, why not? And if so, what is the associative binary operator? What is the
-identity?
+$$ A $$. Can $$ \text{End}(A) $$ form a monoid? If not, why not? And if so, what
+is the associative binary operator? What is the identity?
 3. Implement a useful `Functor` instance for the `Failable` type below. Recall
 that in order to implement a `Functor` instance, we need only define the
 behaviour of a single function, `fmap`, which should take a function and inject
