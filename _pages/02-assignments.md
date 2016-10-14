@@ -65,10 +65,10 @@ data IntTree = ...
 inOrder :: IntTree -> [Int]
 
 -- Traverse the tree from top to bottom, printing each row from left to right
--- i.e. for the sample tree, should return [3,2,5,1,4,6].
+-- i.e. for the sample tree, should return [3,1,5,2,4,6].
 topDown :: IntTree -> [Int]
 
 -- Same as above but, start from the bottom and work up, printing left to right
--- i.e. for the sample tree, should return [1,4,6,2,5,3].
+-- i.e. for the sample tree, should return [2,4,6,1,5,3].
 bottomUp :: IntTree -> [Int]
 ```
