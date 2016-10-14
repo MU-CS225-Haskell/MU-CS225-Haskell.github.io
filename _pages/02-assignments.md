@@ -72,3 +72,87 @@ topDown :: IntTree -> [Int]
 -- i.e. for the sample tree, should return [2,4,6,1,5,3].
 bottomUp :: IntTree -> [Int]
 ```
+
+### Solution
+
+...
+
+## Assignment 2
+
+Some of these questions are quite tough so be sure to work together, use any
+resources you can find, do research, etc. Also, please do email me if something
+is unclear!
+
+### Recursive Patterns
+
+Before attempting these questions, mess around with the functions `foldl` and
+`foldr`, get a feel for how they work. Also be sure to have a look at
+[this](https://wiki.haskell.org/Fold) page.
+
+Using the following data type
+
+```haskell
+data Bit = Zero | One
+  deriving Show
+```
+
+answer the following questions:
+
+1. Implement an `xor :: Bit -> Bit -> Bit` function
+which computes the exclusive-or of two bits. Then implement a function that
+takes a list of `Bit`s and returns `One` if and only if there are an odd number
+of `One`s in the list. NOTE: You cannot use explicit recursion to answer this
+question! You must implement the function using either `foldl` or `foldr`.
+2. Implement `filter` using `foldr`, and `map` using
+`foldl`. As a hint for `map`, use this implementation of reverse as inspiration:
+`reverse xs = foldl (flip (:)) [] xs`
+
+### Typeclasses
+
+Recall that a monoid is 3-tuple $$ (M, \cdot, e) $$, where $$ M $$ is a set,
+$$ \cdot $$ is an associative binary operator, and $$ e \in M $$ is an element
+satisfying $$ e \cdot x = x \cdot e = x $$, for all $$ x \in M $$.
+
+1. Explain why $$ \mathbb{N} = \{1,2,3,...\} $$ is *not* a monoid under
+addition.
+2. Note that $$ \text{End}(A) $$ for some set $$ A $$ represents the set of all
+endomorphisms on the set $$ A $$, i.e. the set of all functions from $$ A $$ to
+$$ A $$. Can $$ \{ f \in \text{End}(A) \} $$ form a monoid?
+If not, why not? And if so, what is the associative binary operator? What is the
+identity?
+3. Implement a useful `Functor` instance for the `Failable` type below. Recall
+that in order to implement a `Functor` instance, we need only define the
+behaviour of a single function, `fmap`, which should take a function and inject
+it into the functor context. The definition of `Failable` is
+
+```haskell
+data Failable a = Failure String | OK a
+```
+
+Think of this type as a error handling type that can give us error messages
+describing how the computation failed. Some example usage:
+
+```haskell
+head' :: [a] -> Failable a
+head' []    = Failure "Took head of empty list."
+head' (x:_) = OK x
+
+sqrt' :: Double -> Failable Double
+sqrt' n
+  | n < 0     = Failure "Took sqrt of negative number"
+  | otherwise = OK (sqrt n)
+
+parseJSON :: String -> Failable JObject
+parseJSON s
+  | {- no parse -}         = Failure "Couldn't parse token at ..."
+  | {- parsed correctly -} = OK parsedObject
+```
+
+You get the idea. We need to be able to apply functions to values wrapped in
+`Failable`. Here's a template:
+
+```haskell
+instance Functor Failable where
+  fmap f (Failure s) = ???
+  fmap f (OK val)    = ???
+```
