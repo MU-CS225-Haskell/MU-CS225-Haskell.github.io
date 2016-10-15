@@ -4,6 +4,11 @@ title: Assignments
 permalink: /assignments/
 ---
 
+<h3>Contents</h3> [//]:# (This ensures that the TOC doesn't include this header)
+
+* TOC
+{:toc}
+
 ### Submissions
 
 I'm not picky on how you'd like to submit the homeworks, there's no official
@@ -172,7 +177,7 @@ analogous:
 
 ```haskell
 -- First way
-bottomUp tree = map fst $ sortOn snd $ assignLevel tree
+bottomUp tree = map fst $ sortOn (negate . snd) $ assignLevel tree
 
 -- Second way
 bottomUp tree = [value | level <- [maxLevel, maxLevel - 1 .. 0]
