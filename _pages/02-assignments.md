@@ -300,9 +300,8 @@ which computes the exclusive-or of two bits. Then implement a function that
 takes a list of `Bit`s and returns `One` if and only if there are an odd number
 of `One`s in the list. NOTE: You cannot use explicit recursion to answer this
 question! You must implement the function using either `foldl` or `foldr`.
-2. Implement `filter` using `foldr`, and `map` using
-`foldl`. As a hint for `map`, use this implementation of reverse as inspiration:
-`reverse xs = foldl (flip (:)) [] xs`
+2. Implement `filter` and `map` using `foldr`. As a hint for `map`, note that
+`foldr (:) [] xs == xs`, for all lists.
 
 ### Typeclasses
 
@@ -317,9 +316,11 @@ endomorphisms on the set $$ A $$, i.e. the set of all functions from $$ A $$ to
 $$ A $$. Can $$ \text{End}(A) $$ form a monoid? If not, why not? And if so, what
 is the associative binary operator? What is the identity?
 3. Implement a useful `Functor` instance for the `Failable` type below. Recall
-that in order to implement a `Functor` instance, we need only define the
-behaviour of a single function, `fmap`, which should take a function and inject
-it into the functor context. The definition of `Failable` is
+that the `Functor` typeclass represents the class of all types that can behave
+like containers (in a broad sense). In order to implement a `Functor` instance,
+we need only define the behaviour of a single function, `fmap`, which should
+take any function from `a` to `b` and inject it into the functor context. The
+definition of `Failable` is
 
 ```haskell
 data Failable a = Failure String | OK a
