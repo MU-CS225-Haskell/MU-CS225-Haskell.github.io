@@ -353,3 +353,53 @@ instance Functor Failable where
   fmap f (Failure s) = ???
   fmap f (OK val)    = ???
 ```
+
+### Solution
+
+These were the solutions to the problems due for today:
+
+#### **Recursive Patterns**
+
+```haskell
+data Bit = Zero | One
+  deriving (Show)
+
+xor :: Bit -> Bit -> Bit
+xor Zero Zero = Zero
+xor One  One  = Zero
+xor _    _    = One
+
+xorList :: [Bit] -> Bit
+xorList = foldr xor Zero
+
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' p = foldr (\x -> if p x then (x:) else id) []
+
+map' :: (a -> b) -> [a] -> [b]
+map' f = foldr ((:) . f) []
+```
+
+Rather than explaining these (which I already did in class), it would be more
+instructive to copy the code somewhere and play around with it. Try changing
+some things and see what happens.
+
+#### **Typeclasses**
+
+1. No, since $$ 0 \notin \mathbb{N} $$, which is the identity with respect to '$$ + $$'.
+2. Yes, $$ \left( \text{End}(A), \circ, \text{id}_A \right) $$ is a monoid. See
+[here](https://hackage.haskell.org/package/base-4.9.0.0/docs/src/Data.Monoid.html#Endo)
+for the real implementation of this monoid in Haskell.
+3. See below.
+
+```haskell
+data Failable a = Failure String | OK a
+  deriving Show
+
+instance Functor Failable where
+  fmap _ (Failure s) = Failure s
+  fmap f (OK v)      = OK (f v)
+```
+
+This `Functor` instance is simple enough. If we try to apply a function to a
+failed computation, we just don't bother computing it and return the same error
+message as before, otherwise we apply the function `f` to the value inside `OK`.
