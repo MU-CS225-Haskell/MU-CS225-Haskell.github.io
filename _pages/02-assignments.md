@@ -403,3 +403,116 @@ instance Functor Failable where
 This `Functor` instance is simple enough. If we try to apply a function to a
 failed computation, we just don't bother computing it and return the same error
 message as before, otherwise we apply the function `f` to the value inside `OK`.
+
+## Assignment 3 (HackerRank)
+
+Here were the solutions I had for the HackerRank lab.
+
+### Leap Years
+
+```haskell
+main = isLeapYear <$> readLn >>= print
+
+isLeapYear :: Integer -> Bool
+isLeapYear n = (n %? 4) && (not (n %? 100) || (n %? 400))
+
+-- | a %? b == a `isDivisibleBy` b
+(%?) :: Integer -> Integer -> Bool
+a %? b = a `rem` b == 0
+```
+
+I like to define `%?` as a shortcut for 'is divisible by'. Sadly, `|` is taken
+so we can't use that.
+
+If the use of `<$>` and `>>=` is confusing you, look at the `Functor` and
+`Monad` typeclass definitions (note that `<$>` is an infix synonym for `fmap`)
+and recall that `IO` is an instance of both `Functor` and `Monad`.
+
+The following might be more readable (since it can (kind of) be read left to
+right):
+
+```haskell
+main = print =<< isLeapYear <$> readLn
+```
+
+`=<<` is just `>>=` with its arguments flipped.
+
+### Number Words
+
+Everyone had good solutions to this, so I decided to opt for a different one so
+you can see another way that this could be done.
+
+```haskell
+import Data.Char
+import Data.List
+
+main = w2s <$> readLn >>= print
+
+w2s :: Int -> String
+w2s n = concat $ intersperse "-" [table !! digitToInt d | d <- show n]
+  where table = [ "zero", "one", "two", "three", "four", "five"
+                , "six", "seven", "eight", "nine", "ten" ]
+```
+
+`show n` converts the number to a list of characters, which we then convert to
+their respective numbers by indexing a lookup table. Then we intersperse hyphens
+between the words and stitch it together with `concat`.
+
+### Base Conversion
+
+```haskell
+import Control.Monad
+
+main = do
+  tcs <- readLn
+  replicateM_ tcs $ do
+    [n,b,b'] <- map read . words <$> getLine
+    print $ unDigits $ convertBase b b' $ digits n
+
+type Base   = Integer
+type Digits = [Integer] -- always reversed
+
+digits :: Integer -> Digits
+digits = toBase 10
+
+unDigits :: Digits -> Integer
+digits = fromBase 10
+
+fromBase :: Base -> Digits -> Integer
+fromBase b ds = foldr (((*b) .) . (+)) 0 ds `quot` b
+
+toBase :: Base -> Integer -> Digits
+toBase _ 0 = []
+toBase b n = let (q,r) = n `quotRem` b
+             in  r : toBase b q
+
+convertBase :: Base -> Base -> Digits -> Digits
+convertBase b b' = toBase b' . fromBase b
+```
+
+Again, everyone who submitted had good answers. Note the pointfree mess inside
+the `fromBase` function: `((*b) .) . (+)`. Let's expand this.
+
+```
+((*b) .) . (+) ==> \x -> ((*b) .) ((+) x)
+               ==> \x -> (\f -> (*b) . f) (x+)
+               ==> \x -> (\f z -> b * f z) (\y -> x + y)
+               ==> \x -> (\z -> b * (z + x))
+               ==> \x z -> b * (z + x)
+```
+
+So if we assume we have a number with digits $$ d_n \cdots d_0 $$ in some base
+$$ b $$, we get the following procedure by folding:
+
+$$
+\begin{align}
+b \cdot (0 + d_n) &= bd_n\\
+\rightarrow \quad b \cdot (bd_n + d_{n - 1}) &= b^2d_n + bd_{n - 1}\\
+\rightarrow \quad b \cdot (b^2d_n + bd_{n - 1} + d_{n - 2}) &= b^3d_n + b^2d_{n - 1} + bd_{n - 2}\\
+&\vdots\\
+b^{n + 1}d_n + \cdots& + b^2d_1 + bd_0
+\end{align}
+$$
+
+Notice that we're off by a factor of $$ b $$; that's why we have to divide by
+$$ b $$ at the end.
