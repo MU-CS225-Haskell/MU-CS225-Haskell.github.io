@@ -516,3 +516,388 @@ $$
 
 Notice that we're off by a factor of $$ b $$; that's why we have to divide by
 $$ b $$ at the end.
+
+## Assignment 4
+
+This assignment was to solve the problems located [here](https://www.schoolofhaskell.com/user/DanBurton/20-intermediate-exercises).
+These are tough questions, so I'll go through a selection of them to show the
+line of thinking that is required to answer them. The answers to these exercises
+can be found [here](https://gist.github.com/SilverSylvester/3152cacc29d0c5a72423826faa6f86f2).
+
+### Exercise 3
+
+```haskell
+class Fluffy f where
+  furry :: (a -> b) -> f a -> f b
+
+instance Fluffy ((->) t) where
+  furry = error "todo"
+```
+
+So we have a typeclass called `Furry` which accepts a type parameter `f` and
+implements a single function `furry :: (a -> b) -> f a -> f b`. How do we make
+this work for `((->) t)`?
+
+First thing to note is that `f == (->) t` in this case, so we can see what type
+`furry` should have by replacing every instace of `f` with `(->) t`.
+
+```haskell
+furry :: (a -> b) -> ((->) t a) -> ((->) t b)
+```
+
+Note also that `(->) t` is really just `(t ->)`, but you can't write it like
+that if the `->` operator has only one type operand. In this case, we have two so
+we can rewrite this type signature with `->` infix:
+
+```haskell
+furry :: (a -> b) -> (t -> a) -> (t -> b)
+```
+
+OK, that looks better. Let's give `furry` its arguments (as we can see, it takes
+two functions as arguments):
+
+```haskell
+instance Fluffy ((->) t) where
+  furry f g = error "todo"
+```
+
+How do we combine `f` and `g` so that we get a function of type `t -> b`? If you
+can't see the answer yet, consider the futher rewritten type signature for `furry`:
+
+```haskell
+furry :: (a -> b) -> (t -> a) -> t -> b
+```
+
+We just dropped the brackets from the last two terms. Now we can think of `furry`
+as a function that takes two functions (`f` and `g`) and a value of type `t`,
+and then returns a value of type `b`. How to we transform the value of type
+`t` into a value of type `b`? Notice that we're effectively forced to conclude
+only one thing: we apply `g` first to obtain a value of type `a`, then we apply
+`f` to obtain a value of type `b`. Here's how that works:
+
+```haskell
+furry f g x = f (g x)
+```
+
+Notice that this is just the definition of function composition, so we can
+rewrite this as:
+
+```haskell
+furry = (.)
+```
+
+### Exercise 7
+
+```haskell
+class Misty m where
+  banana :: (a -> m b) -> m a -> m b
+  unicorn :: a -> m a
+
+instance Misty [] where
+  banana = error "todo"
+  unicorn = error "todo"
+```
+
+For this one, we just do the same thing as with the last one: rewrite the type
+signatures for the specialised instances and see what we can do from there.
+Here `m == []`:
+
+```haskell
+banana :: (a -> [] b) -> [] a -> [] b
+unicorn :: a -> [] a
+-- which is the same as:
+banana :: (a -> [b]) -> [a] -> [b]
+unicorn :: a -> [a]
+```
+
+The definition for `unicorn` should be reasonably obvious. We need to take a
+value of type `a` into a list. Easiest way to do that is just to put it in a list.
+
+```haskell
+unicorn x = [x]
+```
+
+`banana` is a little trickier. Using the function (let's call it `f :: (a -> [b])`)
+we need to take `[a]` to `[b]`. It won't be as easy as just mapping the function
+over the list, since we would end up with `[[b]]`, not `[b]`, which is what we
+need. However, we could use the function `concat :: [[a]] -> [a]` to flatten it:
+
+```haskell
+banana f xs = concat (map f xs)
+```
+
+Notice that this is the same as:
+
+```haskell
+banana f xs = concatMap f xs
+```
+
+... which we can then eta-reduce further to get:
+
+
+```haskell
+banana = concatMap
+```
+
+### Exercise 9
+
+```haskell
+instance Misty ((->) t) where
+  banana = error "todo"
+  unicorn = error "todo"
+```
+
+We'll implement `unicorn` first. Rewriting the type signature, we get:
+
+```haskell
+unicorn :: a -> (t -> a)
+-- which is the same as
+unicorn :: a -> t -> a
+```
+
+So `unicorn` accepts two arguments of type `a` and `t` respectively and returns
+a value of type `a`. Notice that there is nothing at all that we can do with the
+value of type `t`. Any attempts to use it will result in a type error (try it).
+So the only logical explanation is to not use that argument. As for the value of
+type `a`, there's nothing we can do with that value except to simply return it.
+Overall we get:
+
+```haskell
+unicorn x _ = x
+```
+
+Notice that this is the definition of the function `const`, so we can rewrite:
+
+```haskell
+unicorn = const
+```
+
+Now on to `banana`. Let's rewrite its type signature:
+
+```haskell
+banana :: (a -> t -> b) -> (t -> a) -> t -> b
+```
+
+... so assuming `banana`s arguments are `f`, `g` and `x`, we have:
+
+```haskell
+f :: a -> t -> b
+g :: t -> a
+x :: t
+```
+
+We eventually want a value of type `b`, so we need to use `f` to get there
+(since its return type is `b`). In order to get to `b`, we must supply `f` two
+values: one value of type `a` and another of type `t`. `x` is the value of type
+`t` so we're done there. To get a value of type `a`, we just need to apply `g`
+to `x`, i.e. `g x :: a`. Putting it all together:
+
+```haskell
+banana f g x = f (g x) x
+```
+
+### Exercise 12
+
+```haskell
+jellybean :: Misty m => m (m a) -> m a
+jellybean x = error "todo"
+```
+
+In these questions, where we aren't implementing any typeclass instances, we
+need to implement these functions independently of any specific types. That is
+to say, we need to use `banana` and `unicorn`.
+
+We have a value of type `m (m a)` which we need to convert to an `m a`. Let's
+see how we might be able to put `banana` to use here.
+
+We definitely can't supply `x :: m (m a)` as the first argument to `banana`, so
+we'll assume it's the second argument. We also need the return type to be `m a`,
+so we'll set `b = a`. We'll update the type signature accordingly:
+
+```haskell
+-- Regular type signature
+banana :: (a -> m b) -> m a -> m b
+-- Replacing all instances of `a` with `m a`, and `b` with `a`
+banana :: (m a -> m a) -> m (m a) -> m a
+```
+
+There is only one function we can choose for `m a -> m a`, and that's `id` (the
+identity function). We will then have:
+
+```haskell
+banana id :: m (m a) -> m a
+```
+
+and so
+
+```haskell
+jellybean x = banana id x
+-- which is the same as
+jellybean = banana id
+```
+
+### Exercise 13
+
+```haskell
+apple :: Misty m => m a -> m (a -> b) -> m b
+apple x f = error "todo"
+```
+
+This looks a lot like the definition of `furry'` from exercise 6, the only
+difference being the order of the arguments, and that instead of `f :: a -> b`,
+we have `f :: m (a -> b)`. That is to say, we'd like to write `furry' f x` and
+be done with it, but we can't. Let's write out all the relevant type signatures:
+
+```haskell
+x      :: m a
+f      :: m (a -> b)
+furry' :: (a -> b) -> m a -> m b
+banana :: (a -> m b) -> m a -> m b
+```
+
+Since we can't use `furry'` to get to `m b`, we'll try `banana`. It may appear
+at first that `x` should be the second argument of `banana`, but instead we will
+assume that `f` is the second argument of `banana` and update the type signature:
+
+```haskell
+-- a == (a -> b)
+\h -> banana h f :: ((a -> b) -> m b) -> m b
+```
+
+All that now remains is to produce a function of type `(a -> b) -> m b`. If we
+supply `x` as the second argument to `furry'`, we get the required type signature,
+so `\g -> furry' g x :: (a -> b) -> m b` will do this. Putting it all together:
+
+```haskell
+apple x f = banana (\g -> furry' g x) f
+-- which is the same as
+apple x = banana (\g -> furry' g x)
+```
+
+### Exercise 14
+
+```haskell
+moppy :: (Misty m) => [a] -> (a -> m b) -> m [b]
+```
+
+Since we're dealing with lists, we'll use that to our advantage by splitting the
+problem into the base case and recursive case.
+
+```haskell
+moppy [] _ = unicorn []
+```
+
+This should be reasonably clear. Now we'll focus on the recursive case:
+
+```haskell
+moppy (x:xs) f = error "todo"
+```
+
+Here are all the relevant type signatures:
+
+```haskell
+x      :: a
+xs     :: [a]
+f      :: a -> m b
+furry' :: (a -> b) -> m a -> m b
+apple  :: m a -> m (a -> b) -> m b
+
+moppy  :: [a] -> (a -> m b) -> m [b]
+```
+
+As you may have guessed, `moppy xs f` is going to be the recursive call, so we
+need to include this. We should also change all instances of
+
+```haskell
+x      :: a
+xs     :: [a]
+f      :: a -> m b
+furry' :: (a -> b) -> m a -> m b
+apple  :: m a -> m (a -> b) -> m b
+
+moppy xs f :: m [b]
+
+moppy  :: [a] -> (a -> m b) -> m [b]
+```
+
+Notice that `apple (moppy xs f) :: m ([b] -> c) -> m c`. So we need to produce
+a function of type `m ([b] -> c)`, for some `c`. In particular, we should pick
+`c == [b]`, which means we need `m ([b] -> [b])`. The only value we can work
+with is `f x :: m b`, so we need to use `furry'` to take `m b` to `m ([b] -> [b])`.
+To do this, we need to use `(:) :: b -> [b] -> [b]` with `furry'` and `f x`.
+Altogether, `furry' (:) (f x) :: m ([b] -> [b])`, which means that if we supply
+this to the second argument that `apple` takes, we get the desired result.
+
+```haskell
+moppy [] _     = unicorn []
+moppy f (x:xs) = apple (moppy xs f) (furry' (:) (f x))
+```
+
+### Exercise 19/20
+
+The main difficulty with these exercises is the fact that `State` contains a
+function, which we can't pattern match on directly. However, we can work around
+this.
+
+```haskell
+newtype State s a = State { state :: s -> (s, a) }
+```
+
+For the `Fluffy` instance, the trick is to use `let` bindings to extract the
+info you need.
+
+```haskell
+furry f (State st) = error "todo"
+
+f  :: a -> b
+st :: s -> (s, a)
+```
+
+We need to return `s -> (s, b)` (wrapped in `State`). Since we're returning a
+function, we can assume the existence of one of the parameters it takes (we'll
+call it `s`; it also has type `s` so don't let that confuse you). Our new list
+of type signatures is
+
+```haskell
+s  :: s
+f  :: a -> b
+st :: s -> (s, a)
+
+st s :: (s, a)
+```
+
+Ah, now we have access to the values in the tuple through `st s`. Once we
+have these values, it's just like a regular `Fluffy` instance, apply the
+function `f` to the right value:
+
+```haskell
+furry f (State st) = State $ \s -> let (s', a) = st s in (s', f a)
+```
+
+The `Misty` instance is a bit more complicated again. The `unicorn` definition
+is reasonably easy:
+
+```haskell
+unicorn t = State $ \s -> (s, t)
+```
+
+The `banana` instance uses the same trick to extract the tuple from the `State`:
+
+```haskell
+banana f (State st) = State $ \s -> let (s', a) = st s in ...
+```
+
+The only issue is what comes after `in` (it should have type `(s, b)`). We could
+do the same as last time if `f :: a -> b`, but this time we have
+`f :: a -> State s b`. Here's how you do it:
+
+First apply `f` to `a`, which gives `f a :: State s b`. Now apply `state`, which
+gives `state (f a) :: s -> (s, b)`, and finally apply `s` which gives
+`state (f a) s :: (s, b)`. Altogether we have
+
+```haskell
+banana f (State st) = State $ \s -> let (s', a) = st s in state (f a) s
+```
+
+If there are any questions in here you wanted me to cover, send me an email and
+I'll update the list.
