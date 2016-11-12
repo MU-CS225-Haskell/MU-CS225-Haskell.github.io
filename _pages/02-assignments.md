@@ -806,7 +806,7 @@ moppy  :: [a] -> (a -> m b) -> m [b]
 ```
 
 As you may have guessed, `moppy xs f` is going to be the recursive call, so we
-need to include this. We should also change all instances of
+need to include this.
 
 ```haskell
 x      :: a
