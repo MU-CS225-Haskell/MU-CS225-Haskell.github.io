@@ -2,6 +2,7 @@
 layout: page
 title: About
 permalink: /about/
+visible: true
 ---
 
 This course is an introduction to functional programming through Haskell. While

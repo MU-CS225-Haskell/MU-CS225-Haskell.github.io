@@ -2,6 +2,7 @@
 layout: page
 title: Syntax
 permalink: /syntax/
+visible: true
 ---
 
 This will be a quick specification for common syntactic constructs in Haskell,

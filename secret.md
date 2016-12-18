@@ -1,9 +1,9 @@
 ---
-layout:    page
+layout: page
 permalink: /8c4d1cf0c47810e21abf/
+title: Exam Prep
+visible: false
 ---
-
-# Exam Prep
 
 As far as I'm concerned, the programming assessment for this module is finished.
 The Haskell questions on the CS225 exam paper will test theoretical knowledge.

@@ -2,6 +2,7 @@
 layout: page
 title: Practical I/O
 permalink: /do-a-haskell/
+visible: true
 ---
 
 It's assumed here that you don't know much but just want to get a program
