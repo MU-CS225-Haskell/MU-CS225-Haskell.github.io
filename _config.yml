@@ -8,7 +8,7 @@
 # Site settings
 title: Introduction to Haskell
 email: conor.reynolds.2015@mumail.ie
-description: > # this means to ignore newlines until "baseurl:"
+description: "Course page for MU's CS225 module."
 baseurl: "" # the subpath of your site, e.g. /blog
 url: https://mu-cs225-haskell.github.io # the base hostname & protocol for your site
 twitter_username:
@@ -17,3 +17,7 @@ github_username:  MU-CS225-Haskell
 # Build settings
 markdown: kramdown
 include: ['_pages']
+
+collections:
+  notes:
+    output: true

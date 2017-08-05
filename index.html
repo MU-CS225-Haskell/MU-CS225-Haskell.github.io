@@ -4,23 +4,15 @@ layout: default
 
 <div class="home">
 
-  <h1 class="page-heading">Topics</h1>
-
-  <p>
-    <span style="font-size: 0.8em"><i>
-      Make sure you read the <a href="{{ site.baseurl }}/about">About</a> page
-      before looking through any of the topics!
-    </i></span>
-  </p>
-
   <ul class="post-list">
-    {% for post in site.posts %}
+    {% for post in site.notes %}
       <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+        <!-- <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span> -->
 
         <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ forloop.index }}. {{ post.title }}</a>
         </h2>
+        <!-- <small>{{ post.content | strip_html | truncatewords: 20 }}<br/></small> -->
       </li>
     {% endfor %}
   </ul>

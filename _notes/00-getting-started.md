@@ -1,7 +1,8 @@
 ---
-layout: post
-title:  1. Getting Started
-date:   2016-07-29
+layout: page
+title: Getting Started with Stack
+permalink: /getting-started/
+visible: true
 ---
 
 This guide will get you running your first Haskell program, and will hopefully
@@ -10,7 +11,7 @@ use `.cabal` files to configure your projects.
 
 ### Installing Haskell
 
-The only way to install Haskell as of now is via
+The best way to install Haskell as of now is via
 [stack](https://www.haskell.org/downloads#stack). Go through the instructions
 for your OS and come back when it's installed.
 
@@ -105,4 +106,3 @@ if the version advances to `1.9` we ignore it because it may change the library 
 a way that breaks our project. See
 [here](https://pvp.haskell.org/#version-numbers) for more information on
 Haskell's package versioning policy (PVP).
-

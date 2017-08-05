@@ -5,26 +5,17 @@ permalink: /do-a-haskell/
 visible: true
 ---
 
-It's assumed here that you don't know much but just want to get a program
-running that can actually interact with the real world. Maybe you don't
-understand monads yet (or even know what they are) but just want to do some I/O.
-Well, dear reader, you have come to the right place! All you need to know is the
-function composition operator, '`.`', and how to define functions and type
-signatures.
+I/O is a thorny issue. It is, by its nature, difficult to reason about, since
+there is rarely any guarantee in advance that an I/O action will succeed or
+fail. The creators of Haskell knew this, so they created the `IO` data type.
+There is really nothing special about this type: it's just like `Bool` or `[]`
+or `Seq` or any other data type. We will explore this type in more detail in due
+course.
 
-Luckily, you don't need to know anything about monads to do I/O in Haskell. Just
-because `IO` is a monad does not mean you need to know what that entails.
-Technically `IO` is also a
-[strong lax monoidal functor](https://hackage.haskell.org/package/base-4.9.0.0/docs/Control-Applicative.html),
-but you clearly don't need to care about that to make effective use of it.
-
-True, I/O in Haskell does make use of `do`-notation, which is not just for I/O,
-it's for all monads, but again, we can use it without understanding every
-detail.
-
-Oh and a note before we start, I/O is pretty weird in the REPL (certainly if
-you're using Linux, don't know about Windows or OSX) so try to test I/O stuff in
-files if you can.
+Here, we'll go through some very quick examples of reading simple data into your
+program so you can start using Haskell quasi-practically without trying to
+understand exactly how I/O works. If you already know some imperative
+programming then this should be easy to follow.
 
 <h3>Contents</h3> [//]:# (This ensures that the TOC doesn't include this header)
 
@@ -33,17 +24,7 @@ files if you can.
 
 ## HackerRank I/O
 
-HackerRank always likes to give comically unrealistic input sets (for good
-reason, in fairness), so it's a good idea to know how you can get that input in
-Haskell.
-
-One of the most common ways to do this is to just use the `getContents` function
-(which throws all of the input into a single string, which you can then parse),
-but there are other specialised ones like `getLine`, `readLn`, etc., which may
-be better depending on the context. It's worth noting that you won't be reading
-from files, you'll be reading from '[stdin](http://stackoverflow.com/a/3385261)'.
-
-Imagine we wish to read in two things: `n`, a number on its own line, and `ns`,
+Suppose we want to read in two things: `n`, a number on its own line, and `ns`,
 a line containing `n` space seperated integers. For example:
 
 ```
@@ -83,8 +64,9 @@ parseLine :: String -> [Int]
 parseLine = map read . words
 ```
 
-So it applies `words` to the string, then applies `map read`. Here's what that
-does:
+So it applies `words` to the string, then applies `map read`. `words` will split
+the string by spaces, and `read` will try to convert the string into some
+Haskell data type. Here's what that does:
 
 ```
                   "1 2 3 4"
@@ -111,7 +93,7 @@ The `let` binding is what we need to use if we want to bind values to names
 outside of I/O. `parseLine` is a pure function, so we don't need to 'extract'
 it from the `IO` wrapper because it *has* no `IO` wrapper.
 
-This is fine, but we can make it more terse:
+This is fine, but we can make it a little easier to read:
 
 ```haskell
 main = do
@@ -120,9 +102,8 @@ main = do
   -- ...
 ```
 
-Much better! Anyone wondering what `<$>` does can go and learn about typeclasses
-and functors (`<$>` is an infix synonym for `fmap`), but practically speaking,
-it allows you to apply the function `parseLine` to the boxed value in `getLine`.
+Much better! Practically speaking, `<$>` allows you to apply the function
+`parseLine` to the boxed value in `getLine`.
 
 By the way, in case you didn't notice, we won't need `n` at all! HackerRank
 gives you this in case you're using a language like C, since it makes it
@@ -202,4 +183,4 @@ ___
 
 <br/>
 
-More to come!
+More to come! -->
