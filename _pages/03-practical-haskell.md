@@ -179,8 +179,233 @@ main = do
   [a, b, c] <- parseLine <$> getLine
 ```
 
-___
+## More Complex Data
 
-<br/>
+To parse data much more complicated than the above, it's a good idea to use some
+of Haskell's varied parser libraries. We'll use `megaparsec` in this example.
 
-More to come! -->
+We're going to try to write a parser to automatically analyse
+[Heroku](https://www.heroku.com/) log files. Here's an example from their
+[specification](https://devcenter.heroku.com/articles/logging):
+
+```log
+2010-09-16T15:13:46.677020+00:00 app[web.1]: Processing PostController#list (for 208.39.138.12 at 2010-09-16 15:13:46) [GET]
+2010-09-16T15:13:46.677023+00:00 app[web.1]: Rendering template within layouts/application
+2010-09-16T15:13:46.677902+00:00 app[web.1]: Rendering post/list
+2010-09-16T15:13:46.678990+00:00 app[web.1]: Rendered includes/_header (0.1ms)
+2010-09-16T15:13:46.698234+00:00 app[web.1]: Completed in 74ms (View: 31, DB: 40) | 200 OK [http://myapp.heroku.com/]
+2010-09-16T15:13:46.723498+00:00 heroku[router]: at=info method=GET path="/posts" host=myapp.herokuapp.com" fwd="204.204.204.204" dyno=web.1 connect=1ms service=18ms status=200 bytes=975
+2010-09-16T15:13:47.893472+00:00 app[worker.1]: 2 jobs processed at 16.6761 j/s, 0 failed ...
+```
+
+Each line has
+
+1. a timestamp
+1. a source (where the log message came from, either your own 'app' or 'heroku')
+1. a dyno ('web', 'worker', or 'router'), and
+1. the message itself
+
+We want to create a data type called `HerokuLog` which stores this information.
+
+First thing we need to do is write datatypes that can store each component
+piece, write parsers for these individual types, then combine these parsers to
+create the overall `HerokuLog` parser.
+
+Let's go ahead and import the `megaparsec` library and set up the parser.
+
+```haskell
+-- This is stuff we'll write later that we're going to export.
+module HerokuLog
+  ( herokuLog
+  , parse
+  , parseErrorPretty
+  ) where
+
+import Data.Time
+import Text.Megaparsec
+import Text.Megaparsec.Lexer (integer)
+
+type Parser = Parsec Dec String
+```
+
+This sets up a parser with default error handling capabilities (`Dec`) which
+parses `String`s.
+
+### Timestamp
+
+Let's set about parsing the timestamp. The syntax is very easy to follow, so
+I'll explain by example. We want to parse something of the form
+`2010-09-16T15:13:46.677020+00:00`, i.e.
+`[year]-[month]-[day]T[hour]:[minute]:[second].[millisecond]+[diff]`. For
+simplicity, we're not going to care too much about the 'millisecond' and 'diff'
+components, we'll just focus on parsing the information before that. Our `Timestamp`
+data type is just going to be a synonym for the `LocalTime` type found in the `time`
+package.
+
+```haskell
+type Timestamp = LocalTime
+
+timestamp :: Parser Timestamp
+timestamp = do
+  -- parse exactly four digit characters
+  yyyy <- count 4 digitChar
+  -- parse a hyphen
+  char '-'
+  mm <- count 2 digitChar
+  char '-'
+  dd <- count 2 digitChar
+  char 'T'
+  hh <- count 2 digitChar
+  char ':'
+  mm' <- count 2 digitChar
+  char ':'
+  ss <- count 2 digitChar
+  -- We don't care about the next few chars, but we still
+  -- need to consume them.
+  char '.' >> count 6 digitChar
+  char '+' >> count 2 digitChar
+  char ':' >> count 2 digitChar
+  -- Finally we package everything up into a LocalTime type
+  -- from the 'time' package. You can read the docs for more
+  -- information on how to use the library.
+  return $ LocalTime
+    { localDay = fromGregorian (read yyyy) (read mm) (read dd)
+    , localTimeOfDay = TimeOfDay (read hh) (read mm') (read $ ss)
+    }
+```
+
+This is quite long, but reads well. We can very explicitly tell the parser
+exactly what to parse and when, before packaging it up into a data type to
+return.
+
+### Source
+
+This one is easy. We just need to check if we see 'app' or 'heroku', otherwise
+the parse fails.
+
+```haskell
+data Source = App | Heroku
+  deriving Show
+
+source :: Parser Source
+source = app <|> heroku
+  where
+    app = do
+      string "app"
+      return App
+    heroku = do
+      string "heroku"
+      return Heroku
+```
+
+The `<|>` operator will try the first parser first, and if that fails, try the
+second. The first parser we have, called `app`, will check for the string 'app'
+and return `App` if that succeeds. The second parser, `heroku`, will check for
+the string 'heroku' and return `Heroku` if that succeeds. Easy!
+
+### Dyno
+
+This one follows a similar pattern to above, except we need to know the number
+of the dyno, as well as the name (except in the case of the router dyno)
+
+```haskell
+data Dyno =
+    Worker Integer
+  | Web Integer
+  | Router
+  deriving Show
+
+dyno :: Parser Dyno
+dyno = worker <|> web <|> router
+  where
+    worker = do
+      string "worker"
+      char '.'
+      n <- integer
+      return $ Worker n
+
+    web = do
+      string "web"
+      char '.'
+      n <- integer
+      return $ Web n
+
+    router = do
+      string "router"
+      return Router
+```
+
+### Message
+
+This one doesn't really require any work, parsing a string to a string is trivial.
+We give a type synonym for clarity.
+
+```haskell
+type Message = String
+```
+
+### Heroku Log
+
+First, we need to be able to parse a single line of the log file, then we can
+just repeatedly apply the single line parser to parse the whole file. The `HerokuLogLine`
+data type is just a combination of all the types we had before:
+
+```haskell
+data HerokuLogLine = HerokuLogLine
+  { hlTimestamp :: Timestamp
+  , hlSource    :: Source
+  , hlDyno      :: Dyno
+  , hlMessage   :: Message
+  } deriving Show
+```
+
+The parser is just a simple combination of the parsers we wrote beforehand.
+
+```haskell
+herokuLogLine :: Parser HerokuLogLine
+herokuLogLine = do
+  time <- timestamp
+  space
+  srcName <- source
+  char '['
+  dynoName <- dyno
+  char ']'
+  string ": "
+  -- we need 'printChar' here so we don't end up consuming a
+  -- newline character by accident.
+  msg <- many printChar
+  return $ HerokuLogLine time srcName dynoName msg
+```
+
+Now we just need to finish it off by writing a parser that can parse the whole
+file at once. The whole log file is really just a list of `HerokuLogLine`, so
+that's what we'll call it.
+
+```haskell
+type HerokuLog = [HerokuLogLine]
+
+herokuLog :: Parser HerokuLog
+herokuLog = many $ herokuLogLine <* optional eol
+```
+
+This will repeatedly parse the lines of the file until it reaches the end.
+
+To test these, import the module into ghci with `:l HerokuLog` and run
+`parseTest [parser] [string]`. Here's the main module that imports and uses
+these parsers.
+
+```haskell
+module Main where
+
+import HerokuLog
+
+main :: IO ()
+main = do
+  logFile <- readFile "resources/heroku.log"
+  case parse herokuLog "" logFile of
+    Left err   -> putStr $ parseErrorPretty err
+    Right logs -> mapM_ print logs
+```
+
+I've stored a sample log in a folder called `resources` called `heroku.log`.
+Feel free to do the same.
