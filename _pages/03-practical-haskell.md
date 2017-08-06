@@ -270,7 +270,7 @@ timestamp = do
   -- information on how to use the library.
   return $ LocalTime
     { localDay = fromGregorian (read yyyy) (read mm) (read dd)
-    , localTimeOfDay = TimeOfDay (read hh) (read mm') (read $ ss)
+    , localTimeOfDay = TimeOfDay (read hh) (read mm') (read ss)
     }
 ```
 
