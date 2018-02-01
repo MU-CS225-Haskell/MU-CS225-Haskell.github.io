@@ -8,7 +8,7 @@
 # Site settings
 title: Introduction to Haskell
 email: conor.reynolds.2015@mumail.ie
-description: "Course page for MU's CS225 module."
+description: "Course page for MU's CS314 Haskell mini-module. Yes I know CS225 ≠ CS314."
 baseurl: "" # the subpath of your site, e.g. /blog
 url: https://mu-cs225-haskell.github.io # the base hostname & protocol for your site
 twitter_username:

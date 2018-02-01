@@ -1,9 +1,11 @@
 ---
 layout: page
-title: Practical I/O
+title: Practical Haskell
 permalink: /do-a-haskell/
 visible: true
 ---
+
+## Simple I/O
 
 I/O is a thorny issue. It is, by its nature, difficult to reason about, since
 there is rarely any guarantee in advance that an I/O action will succeed or
@@ -15,14 +17,15 @@ course.
 Here, we'll go through some very quick examples of reading simple data into your
 program so you can start using Haskell quasi-practically without trying to
 understand exactly how I/O works. If you already know some imperative
-programming then this should be easy to follow.
+programming languages then this should be easy to follow. This should cover most
+HackerRank-esque use cases.
 
 <h3>Contents</h3> [//]:# (This ensures that the TOC doesn't include this header)
 
 * TOC
 {:toc}
 
-## HackerRank I/O
+### HackerRank I/O
 
 Suppose we want to read in two things: `n`, a number on its own line, and `ns`,
 a line containing `n` space seperated integers. For example:
@@ -179,10 +182,15 @@ main = do
   [a, b, c] <- parseLine <$> getLine
 ```
 
-## More Complex Data
+### More Complex Data
 
 To parse data much more complicated than the above, it's a good idea to use some
-of Haskell's varied parser libraries. We'll use `megaparsec` in this example.
+of Haskell's varied parser combinator libraries. We'll use `megaparsec` in this
+example. Even if the data is way simpler than in this example, I'd probably
+still recommend using `megaparsec`, or maybe `attoparsec` if you need raw speed.
+Haskell's base string parsing functionality is completely awful (in particular,
+the `Read` typeclass is *painful*), so, if for nothing else other than code
+clarity and correctness, always use a parser combinator library.
 
 We're going to try to write a parser to automatically analyse
 [Heroku](https://www.heroku.com/) log files. Here's an example from their
@@ -231,7 +239,7 @@ type Parser = Parsec Dec String
 This sets up a parser with default error handling capabilities (`Dec`) which
 parses `String`s.
 
-### Timestamp
+#### Timestamp
 
 Let's set about parsing the timestamp. The syntax is very easy to follow, so
 I'll explain by example. We want to parse something of the form
@@ -278,7 +286,7 @@ This is quite long, but reads well. We can very explicitly tell the parser
 exactly what to parse and when, before packaging it up into a data type to
 return.
 
-### Source
+#### Source
 
 This one is easy. We just need to check if we see 'app' or 'heroku', otherwise
 the parse fails.
@@ -293,6 +301,7 @@ source = app <|> heroku
     app = do
       string "app"
       return App
+
     heroku = do
       string "heroku"
       return Heroku
@@ -303,7 +312,7 @@ second. The first parser we have, called `app`, will check for the string 'app'
 and return `App` if that succeeds. The second parser, `heroku`, will check for
 the string 'heroku' and return `Heroku` if that succeeds. Easy!
 
-### Dyno
+#### Dyno
 
 This one follows a similar pattern to above, except we need to know the number
 of the dyno, as well as the name (except in the case of the router dyno)
@@ -335,7 +344,7 @@ dyno = worker <|> web <|> router
       return Router
 ```
 
-### Message
+#### Message
 
 This one doesn't really require any work, parsing a string to a string is trivial.
 We give a type synonym for clarity.
@@ -344,7 +353,7 @@ We give a type synonym for clarity.
 type Message = String
 ```
 
-### Heroku Log
+#### Heroku Log
 
 First, we need to be able to parse a single line of the log file, then we can
 just repeatedly apply the single line parser to parse the whole file. The `HerokuLogLine`
@@ -391,8 +400,9 @@ herokuLog = many $ herokuLogLine <* optional eol
 This will repeatedly parse the lines of the file until it reaches the end.
 
 To test these, import the module into ghci with `:l HerokuLog` and run
-`parseTest [parser] [string]`. Here's the main module that imports and uses
-these parsers.
+`parseTest [parser] [string]` (e.g. `parseTest herokuLogLine
+"2010-09-16T15:13:46.677902+00:00 app[web.1]: Rendering post/list"`) Here's the
+main module that imports and uses these parsers.
 
 ```haskell
 module Main where
@@ -407,5 +417,163 @@ main = do
     Right logs -> mapM_ print logs
 ```
 
-I've stored a sample log in a folder called `resources` called `heroku.log`.
+I've stored my sample log in a folder called `resources` called `heroku.log`.
 Feel free to do the same.
+
+## Haskell in the wild
+
+I've often wondered to myself what the best way to sell Haskell is. A lot of the
+theoretical details of the language interest me greatly, and so I often find
+myself selling it by appealing to such details. I can appreciate that this may
+not be true of everyone else. Before adopting a new language, there's probably
+only one thing you really want to know: will I be more productive using this
+language?
+
+There are a lot of things that factor into productivity in a language. You want
+to be able to express as much ideas as possible in the clearest way possible.
+You don't want bugs. You want to be able to refactor sections of your code
+quickly, easily, and without breaking everything. Hopefully I can demonstrate
+that Haskell can do all of these things.
+
+To whet your appetite, consider the following application ([source](http://haskell-servant.github.io/posts/2015-08-05-content-types.html))
+
+```haskell
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Main where
+
+import           Codec.Picture
+import           Data.Proxy
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+
+import           Servant
+import           Servant.JuicyPixels
+
+type FORMATS = '[BMP, GIF, JPEG 50, PNG, TIFF, RADIANCE, TGA]
+
+type ConversionApi
+   = ReqBody FORMATS DynamicImage
+  :> Post FORMATS DynamicImage
+
+conversion :: Application
+conversion = serve (Proxy :: Proxy ConversionApi) server
+  where server = return
+
+main :: IO ()
+main = run 3000 conversion
+```
+
+Those 25 lines of code define a full web-based image-converter. You post an
+image in any one of the formats listed in the `FORMATS` type (with appropriate
+headers), and it will spit back the image converted to some other specified
+format.
+
+The concision is mind-boggling. As amazing an example as this is, it would be
+silly to be sold on concision alone. However, concision is a very important
+factor in the clear expression of ideas.
+
+### Handling Failure
+
+Consider the function `head :: [a] -> a` exported by Prelude. The type signature
+for this function says "give me a list of `a`s and I'll give you an `a`". But
+this is wrong, clearly, since you probably know `head []` throws an exception:
+`Prelude.head: empty list`. In fact, there is no meaningful value that head
+could possibly return if you give it an empty list.
+
+Pure functions that cannot return a value for some subset of inputs (usually
+called partial functions) are not uncommon. We need a way to ensure that any
+pure function we write always returns a value for any input we give it.
+
+The easiest way to do this is to write:
+
+```haskell
+headMaybe :: [a] -> Maybe a
+headMaybe []    = Nothing
+headMaybe (x:_) = Just x
+```
+
+but this has a few problems. Suppose we have a sequence of actions that all
+return `Maybe a`, for some type `a`.
+
+```haskell
+... = do
+  xs <- lookup key hashmap
+  n  <- headMaybe xs
+  return (x + 1)
+```
+
+Suppose we run this computation and we get `Nothing`. Why? Did the lookup fail?
+Did the headMaybe function fail? There's no way to tell. For proper error
+reporting, `Maybe` doesn't fit the bill.
+
+Suppose instead we use the `Either` type.
+
+```haskell
+data CustomException
+  = ...
+  | EmptyListException
+  | ...
+
+headE :: [a] -> Either CustomException a
+headE []    = Left EmptyListException
+headE (x:_) = Right x
+```
+
+This is much better! Now if we have a similar computation to the above (assuming
+lookup also returns `Either`), if it fails we'll get `Left [specific
+exception]`, so we'll be able to figure out why it failed.
+
+However, there are still problems with this. Suppose you have two separate
+exception types, `CustomException` and `OtherException`. It turns out we can't
+nicely compose these two exceptions in the same `do` block. So perhaps we need a
+better solution.
+
+### The MonadThrow typeclass
+
+```haskell
+import Control.Exception.Safe (throw)
+
+instance Show CustomException where
+  show EmptyListException = "Cannot take head of empty list!"
+
+tryHead :: MonadThrow m => [a] -> m a
+tryHead []    = throw EmptyListException
+tryHead (x:_) = return x
+```
+
+With the `MonadThrow` typeclass, we regain composability but there's no longer a
+good way to tell what errors can possibly be thrown from a function just by
+looking at the type signature.
+
+```haskell
+λ> tryHead [] :: IO Int
+*** Exception: EmptyListException
+
+λ> tryHead [] :: Maybe Int
+Nothing
+
+λ> tryHead [] :: Either E.SomeException Int
+Left EmptyListException
+```
+
+There is always the case that you end up using some functions that return `Maybe`
+or `Either`. If you want to use these functions in `MonadThrow` code, you can
+use case analysis, or you could define some wrapper functions, e.g.
+
+```haskell
+infixr 0 ?#
+(?#) :: (MonadThrow m, Exception e) => Maybe a -> e -> m a
+Nothing ?# e = throw e
+Just x  ?# _ = return x
+
+... = do
+  xs <- lookup key hashmap ?# KeyNotFound key
+  n  <- tryHead xs
+  return (x + 1)
+```
+
+### The Lensed-Reader pattern
+
+Coming Soon&trade;

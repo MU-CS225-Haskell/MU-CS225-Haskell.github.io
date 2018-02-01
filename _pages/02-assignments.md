@@ -2,7 +2,7 @@
 layout: page
 title: Assignments
 permalink: /assignments/
-visible: true
+visible: false
 ---
 
 <h3>Contents</h3> [//]:# (This ensures that the TOC doesn't include this header)
